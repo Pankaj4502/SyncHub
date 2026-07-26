@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3005';
 import { 
   LayoutDashboard, 
   FolderKanban, 
@@ -13,13 +12,16 @@ import {
   X 
 } from 'lucide-react';
 
+// NEW: This tells the app to use the Cloud URL if it exists, otherwise fallback to localhost!
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3005';
+
 export default function Home() {
   // --- STATE ---
   const [activeTab, setActiveTab] = useState('dashboard');
   const [projects, setProjects] = useState<any[]>([]);
   const [tasks, setTasks] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
-  const [logs, setLogs] = useState<any[]>([]); // NEW: State for MongoDB logs
+  const [logs, setLogs] = useState<any[]>([]); 
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +50,7 @@ export default function Home() {
     setUsingMockData(false);
 
     try {
-      // NEW: Added the /api/logs endpoint to our Promise.all
+      // FIXED: Using API_BASE_URL instead of localhost
       const [projectsRes, tasksRes, usersRes, logsRes] = await Promise.all([
         fetch(`${API_BASE_URL}/api/projects`).catch(() => null),
         fetch(`${API_BASE_URL}/api/tasks`).catch(() => null),
@@ -97,7 +99,7 @@ export default function Home() {
     e.preventDefault(); 
     setIsSubmitting(true);
     try {
-      const res = await fetch('http://localhost:3005/api/users', {
+      const res = await fetch(`${API_BASE_URL}/api/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newUserForm)
@@ -116,7 +118,7 @@ export default function Home() {
     e.preventDefault(); 
     setIsSubmitting(true);
     try {
-      const res = await fetch('http://localhost:3005/api/projects', {
+      const res = await fetch(`${API_BASE_URL}/api/projects`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -139,7 +141,7 @@ export default function Home() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const res = await fetch('http://localhost:3005/api/tasks', {
+      const res = await fetch(`${API_BASE_URL}/api/tasks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -158,8 +160,6 @@ export default function Home() {
     }
   };
 
-  // --- HELPER FOR MONGODB LOGS ---
-  // This cross-references the PostgreSQL user ID with the MongoDB log!
   const getLogMessage = (log: any) => {
     const user = users.find(u => u.id === log.userId);
     const userName = user ? user.name : 'Unknown User';
@@ -196,7 +196,6 @@ export default function Home() {
         <StatCard title="Team Members" count={users.length} icon={Users} colorClass="bg-purple-500" />
       </div>
 
-      {/* NEW: Real MongoDB Activity Logs! */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
         <div className="flex items-center gap-2 mb-6">
           <Activity className="text-blue-500" size={20} />
