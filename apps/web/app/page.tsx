@@ -222,7 +222,7 @@ export default function Home() {
             {/* NEW: Delete Button inside Project Card */}
             <button 
               onClick={() => handleDeleteProject(project.id)}
-              className="absolute top-6 right-6 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+              className="absolute top-6 right-6 text-slate-300 hover:text-red-500 opacity-100 group-hover:opacity-100 transition-all"
             >
               <Trash2 size={18} />
             </button>
