@@ -79,7 +79,67 @@ const getAllTasks = async (req, res) => {
     }
     };
 
+
+const updateTaskStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const pgPool = dbService.getPgPool();
+
+    // First get the old task so we can log the change
+    const oldTaskRes = await pgPool.query(`SELECT status, title, assignee_id FROM tasks WHERE id = $1`, [id]);
+    if (oldTaskRes.rowCount === 0) return res.status(404).json({ error: 'Task not found' });
+    const oldTask = oldTaskRes.rows[0];
+
+    // Update to the new status
+    const updateQuery = `UPDATE tasks SET status = $1 WHERE id = $2 RETURNING *;`;
+    const updatedResult = await pgPool.query(updateQuery, [status, id]);
+
+    // Log the change in MongoDB!
+    await ActivityLog.create({
+      action: 'UPDATED_STATUS',
+      userId: oldTask.assignee_id || 0,
+      entityId: id,
+      metadata: { 
+        taskTitle: oldTask.title,
+        oldStatus: oldTask.status, 
+        newStatus: status 
+      }
+    });
+
+    res.status(200).json({ status: 'success', data: updatedResult.rows[0] });
+  } catch (error) {
+    console.error(' Error updating task:', error);
+    res.status(500).json({ status: 'error', error: 'Internal Server Error' });
+  }
+};
+
+const deleteTask = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const pgPool = dbService.getPgPool();
+    
+    const sqlQuery = `DELETE FROM tasks WHERE id = $1 RETURNING *;`;
+    const pgResult = await pgPool.query(sqlQuery, [id]);
+
+    if (pgResult.rowCount === 0) return res.status(404).json({ error: 'Task not found' });
+
+    await ActivityLog.create({
+      action: 'DELETED_TASK',
+      userId: pgResult.rows[0].assignee_id || 0,
+      entityId: id,
+      metadata: { taskTitle: pgResult.rows[0].title }
+    });
+
+    res.status(200).json({ status: 'success', message: 'Task deleted.' });
+  } catch (error) {
+    res.status(500).json({ status: 'error', error: 'Internal Server Error' });
+  }
+};
+
 module.exports = {
   createTask,
-  getAllTasks
+  getAllTasks,
+  updateTaskStatus,
+  deleteTask
 };
