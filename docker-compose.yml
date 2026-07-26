@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: synchub_user
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: synchub_sql
+    ports:
+      - "5432:5432"
+
+  mongodb:
+    image: mongo:6
+    ports:
+      - "27017:27017"
